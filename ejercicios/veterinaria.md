@@ -51,6 +51,11 @@ Tablas: `dueno`, `mascota`, `veterinario`, `consulta`, `medicamento`, `receta`
 10. Para cada consulta que haya recetado más de un medicamento, listar la fecha de la consulta y el nombre de la mascota (sin repetir la fila por cada medicamento).
 11. Listar las mascotas que nunca tuvieron ninguna consulta. (otra forma para el punto 7)
 
+### Consultas combinadas (UNION)
+
+1. Listar en un mismo resultado el apellido de cada dueño y el apellido de cada veterinario, con una columna `rol` que diga `'Dueño'` o `'Veterinario'` según corresponda.
+2. Listar el apellido de todas las personas relacionadas con la mascota `Rocky` de Gómez (`id_mascota` 1): su dueño y todos los veterinarios que la atendieron alguna vez, sin repetir apellidos.
+
 ### Subconsultas
 
 1. Listar las mascotas cuyo peso sea mayor al peso promedio de todas las mascotas.

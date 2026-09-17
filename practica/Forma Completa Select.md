@@ -137,33 +137,51 @@ consulta el clásico "traeme el último registro de cada X" sin subconsultas ni 
 
 ## 8. UNION / INTERSECT / EXCEPT
 
+Las tres piden lo mismo: misma cantidad de columnas, con tipos **compatibles** (no hace
+falta que sean exactamente el mismo tipo — Postgres convierte automático entre numéricos;
+si no son compatibles, como texto y número, hay que convertir con `::` o `cast()`).
+
 ```sql
--- UNION: junta los apellidos de dueños y veterinarios, sin duplicados
-select apellido from dueno
-union
-select apellido from veterinario;
-
--- UNION ALL: igual, pero sin sacar duplicados (más rápido si sabés que no los necesitás sacar)
-select apellido from dueno
+-- UNION: junta apellidos y nombres de dueños y veterinarios, con una columna que dice el rol
+select apellido, nombre, 'Dueño' as rol from dueno
 union all
-select apellido from veterinario;
+select apellido, nombre, 'Veterinario' as rol from veterinario;
 
--- Ojo con este "gotcha": Rocky y Michi son nombres repetidos en mascotas de dueños distintos.
+-- Tipos distintos que no calzan solos: dni es varchar, matricula es int — hay que castear
+select dni as identificador from dueno
+union
+select matricula::text as identificador from veterinario;
+
+-- UNION (sin ALL) elimina duplicados exactos de la fila completa. Ejemplo real donde
+-- eso importa: los apellidos relacionados con la mascota Rocky (id_mascota 1) — el
+-- veterinario Ramírez la atendió en dos consultas distintas y sin UNION aparecería 2 veces
+select d.apellido
+from dueno d join mascota m on m.id_dueno = d.id_dueno
+where m.id_mascota = 1
+union
+select v.apellido
+from consulta c join veterinario v on c.matricula = v.matricula
+where c.id_mascota = 1;
+-- resultado: Gómez, Ramírez, Torres (Ramírez sale una sola vez, no dos)
+
+-- Ojo con este otro "gotcha": Rocky y Michi son nombres repetidos en mascotas de dueños distintos.
 -- UNION los deja como UNA sola fila, aunque son animales distintos:
 select nombre from mascota where id_dueno = 1   -- Rocky, Michi
 union
 select nombre from mascota where id_dueno = 3;  -- Rocky, Michi, Pipo
 -- resultado: Rocky, Michi, Pipo (¡no 5 filas, sino 3!)
 
--- INTERSECT: apellidos que aparecen en ambas tablas (con estos datos, vacío)
-select apellido from dueno
+-- INTERSECT: veterinarios que atendieron consultas tanto en 2023 como en 2024
+select matricula from consulta where extract(year from fecha) = 2023
 intersect
-select apellido from veterinario;
+select matricula from consulta where extract(year from fecha) = 2024;
+-- resultado: 1001, 1003 (Ramírez y Díaz atendieron en ambos años)
 
--- EXCEPT: apellidos de dueños que NO son también apellidos de veterinarios
-select apellido from dueno
+-- EXCEPT: veterinarios que atendieron en 2023 pero no volvieron a atender en 2024
+select matricula from consulta where extract(year from fecha) = 2023
 except
-select apellido from veterinario;
+select matricula from consulta where extract(year from fecha) = 2024;
+-- resultado: 1002 (Torres solo atendió en 2023)
 ```
 
 ## 9. LIMIT, OFFSET y FETCH
