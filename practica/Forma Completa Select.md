@@ -116,11 +116,51 @@ select
 from consulta;
 ```
 
+## 7. CAST, CASE WHEN, COALESCE y funciones útiles
+
+Herramientas para **transformar u operar valores dentro del SELECT** — distinto de los
+operadores de `WHERE` que ya vimos (esos filtran filas; esto transforma columnas).
+
+```sql
+-- CAST: convierte un valor de un tipo a otro. cast(valor as tipo) o el atajo valor::tipo
+select nombre, cast(peso_kg as int) as peso_redondeado
+from mascota;
+
+-- CASE WHEN: lógica condicional, como un if/elif/else dentro del SELECT
+select nombre, peso_kg,
+  case
+    when peso_kg < 5 then 'chico'
+    when peso_kg < 15 then 'mediano'
+    else 'grande'
+  end as tamaño
+from mascota;
+
+-- COALESCE: el primer valor de la lista que NO sea null (útil para valores por defecto)
+select apellido, coalesce(telefono, 'sin cargar') as telefono
+from dueno;
+
+-- NULLIF: al revés de COALESCE — devuelve null si los dos valores son iguales
+select nullif(especialidad, 'Clínica general') as especialidad_especifica
+from veterinario;
+```
+
+Funciones útiles para completar la caja de herramientas (hay muchas más en
+[postgresql.org/docs/current/functions.html](https://www.postgresql.org/docs/current/functions.html)):
+
+| Función | Qué hace | Ejemplo |
+|---|---|---|
+| `upper` / `lower` | Convierte texto a mayúsculas o minúsculas | `upper(apellido)` |
+| `trim` | Saca espacios en blanco de los costados | `trim(motivo)` |
+| `length` | Cantidad de caracteres de un texto | `length(diagnostico)` |
+| `round(n, d)` | Redondea a la cantidad de decimales que pidas | `round(avg(peso_kg), 2)` |
+| `current_date` | La fecha de hoy, sin hora | `where fecha < current_date` |
+| `age(fecha)` | Diferencia entre una fecha y hoy, como intervalo | `age(fecha_nac)` |
+
 ---
 
 # Parte 2 — Extra: lo que no vimos en clase
 
-## 7. DISTINCT y DISTINCT ON
+## 8. DISTINCT y DISTINCT ON
 
 ```sql
 -- DISTINCT: valores únicos
@@ -135,7 +175,7 @@ order by id_mascota, fecha desc;
 `DISTINCT ON` es de las herramientas más útiles y menos conocidas: resuelve en una sola
 consulta el clásico "traeme el último registro de cada X" sin subconsultas ni window functions.
 
-## 8. UNION / INTERSECT / EXCEPT
+## 9. UNION / INTERSECT / EXCEPT
 
 Las tres piden lo mismo: misma cantidad de columnas, con tipos **compatibles** (no hace
 falta que sean exactamente el mismo tipo — Postgres convierte automático entre numéricos;
@@ -184,7 +224,7 @@ select matricula from consulta where extract(year from fecha) = 2024;
 -- resultado: 1002 (Torres solo atendió en 2023)
 ```
 
-## 9. LIMIT, OFFSET y FETCH
+## 10. LIMIT, OFFSET y FETCH
 
 ```sql
 -- Las 5 consultas más recientes
@@ -212,7 +252,7 @@ fetch first 3 rows with ties;
 **Importante:** sin `ORDER BY`, `LIMIT`/`OFFSET` no garantizan qué filas van a volver —
 el orden "natural" de una tabla no está definido en SQL.
 
-## 10. WITH (CTEs — Common Table Expressions)
+## 11. WITH (CTEs — Common Table Expressions)
 
 ```sql
 -- Le da nombre a una subconsulta para reutilizarla o para que la query sea más legible
@@ -256,7 +296,7 @@ select * from contador;
 Si tuviéramos `empleado(legajo, legajo_jefe)`, el mismo patrón serviría para traer "todos
 los subordinados, directos e indirectos, de un jefe dado".
 
-## 11. GROUP BY avanzado: ROLLUP, CUBE, GROUPING SETS
+## 12. GROUP BY avanzado: ROLLUP, CUBE, GROUPING SETS
 
 ```sql
 -- ROLLUP: subtotal por veterinario + un total general al final
@@ -278,7 +318,7 @@ join veterinario v on c.matricula = v.matricula
 group by grouping sets ((v.apellido), (anio), ());
 ```
 
-## 12. LATERAL
+## 13. LATERAL
 
 ```sql
 -- Para cada dueño, la mascota con más peso (un JOIN correlacionado, fila por fila)
@@ -296,7 +336,7 @@ left join lateral (
 `LATERAL` permite que la subconsulta del lado derecho "vea" columnas de la tabla del lado
 izquierdo — algo que un JOIN normal no puede hacer.
 
-## 13. TABLESAMPLE
+## 14. TABLESAMPLE
 
 ```sql
 -- Una muestra aleatoria del ~20% de las consultas (rápido, a nivel de bloque de disco)
@@ -306,7 +346,7 @@ select * from consulta tablesample system (20);
 select * from consulta tablesample bernoulli (20) repeatable (42);
 ```
 
-## 14. FOR UPDATE / FOR SHARE (locking)
+## 15. FOR UPDATE / FOR SHARE (locking)
 
 ```sql
 -- Bloquea la fila para que nadie más la modifique hasta que termine tu transacción
@@ -323,7 +363,7 @@ limit 1
 for update skip locked;
 ```
 
-## 15. TABLE — atajo
+## 16. TABLE — atajo
 
 ```sql
 table veterinario;
